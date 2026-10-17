@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PERLINE by chhooooky</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body class="theme-dark">
+
+<div class="app-container" id="appContainer">
+
+    <!-- HEADER UTAMA -->
+    <header class="top-header">
+        <div class="brand-wrap">
+            <h1>PERLINE <span class="highlight">by chhooooky</span></h1>
+        </div>
+        <div class="header-actions">
+            <button class="profile-trigger" onclick="bukaModalProfil()" title="Profil Pengguna">
+                <div class="profile-avatar-mini" id="headerAvatarMini">G</div>
+                <div class="profile-trigger-text">
+                    <span id="headerUserName">Guest</span>
+                    <small id="headerUserRank">Rakyat Biasa</small>
+                </div>
+            </button>
+        </div>
+    </header>
+
+    <!-- ================================================================= -->
+    <!-- TAB 1: HOME (PENCARIAN & 10 UPDATE TERBARU PER HALAMAN)           -->
+    <!-- ================================================================= -->
+    <main id="viewHome" class="main-view active">
+        <div class="search-input-wrap">
+            <svg class="icon-svg search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="homeSearchInput" class="search-box" placeholder="Cari judul novel, manga, manhwa, atau penulis..." oninput="resetHalamanDanTampilkan('home')">
+        </div>
+
+        <div class="section-header-row">
+            <div class="section-title" id="txtSectionRak">Update Terbaru</div>
+            <div class="badge-count" id="homeTotalBadge">0 Karya</div>
+        </div>
+
+        <div id="homeBookGrid" class="book-grid"></div>
+        <div id="homePagination" class="pagination-bar"></div>
+    </main>
+
+    <!-- ================================================================= -->
+    <!-- TAB 2: EXPLORE (FILTER JENIS, GENRE, STATUS + 10 KARYA/HALAMAN)   -->
+    <!-- ================================================================= -->
+    <main id="viewExplore" class="main-view">
+        <div class="search-input-wrap">
+            <svg class="icon-svg search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="exploreSearchInput" class="search-box" placeholder="Cari karya di katalog Explore..." oninput="resetHalamanDanTampilkan('explore')">
+        </div>
+
+        <!-- TOMBOL SEMUA KOLEKSI, NOVEL, KOMIK DIHAPUS KARENA SUDAH ADA DI DROPDOWN JENIS INI -->
+        <div class="filter-bar">
+            <select id="filterJenis" class="filter-select" onchange="resetHalamanDanTampilkan('explore')">
+                <option value="semua">Semua Jenis</option>
+                <option value="Novel">Light Novel</option>
+                <option value="Manga">Manga</option>
+                <option value="Manhwa">Manhwa</option>
+                <option value="Manhua">Manhua</option>
+            </select>
+
+            <select id="filterGenre" class="filter-select" onchange="resetHalamanDanTampilkan('explore')">
+                <option value="semua">Semua Genre</option>
+            </select>
+
+            <select id="filterStatus" class="filter-select" onchange="resetHalamanDanTampilkan('explore')">
+                <option value="semua">Semua Status</option>
+                <option value="Ongoing">Ongoing</option>
+                <option value="Completed">Completed</option>
+            </select>
+        </div>
+
+        <div class="section-header-row">
+            <div class="section-title" id="txtExploreTitle">Jelajahi Katalog</div>
+            <div class="badge-count" id="exploreTotalBadge">0 Karya</div>
+        </div>
+
+        <div id="exploreBookGrid" class="book-grid"></div>
+        <div id="explorePagination" class="pagination-bar"></div>
+    </main>
+
+    <!-- ================================================================= -->
+    <!-- TAB 3: HISTORY (RIWAYAT BACAAN DI NAVIGASI BAWAH)                 -->
+    <!-- ================================================================= -->
+    <main id="viewHistory" class="main-view">
+        <div class="section-header-row">
+            <div class="section-title" id="txtHistoryTitle">Riwayat Membaca</div>
+            <button class="btn-text-clear" onclick="bersihkanHistory()">Bersihkan History</button>
+        </div>
+        <p class="pane-desc">Ketuk pada daftar di bawah untuk langsung melanjutkan membaca chapter terakhir:</p>
+        <div id="mainHistoryListBox" class="page-list-container"></div>
+    </main>
+
+    <!-- ================================================================= -->
+    <!-- TAB 4: LIBRARY (FAVORIT & BOOKMARK DI NAVIGASI BAWAH)             -->
+    <!-- ================================================================= -->
+    <main id="viewLibrary" class="main-view">
+        <div class="section-header-row">
+            <div class="section-title" id="txtLibraryTitle">Library Saya</div>
+        </div>
+
+        <div class="sub-switch-tabs" style="margin-bottom: 16px;">
+            <button class="sub-tab-btn active" id="tabBtnLibFav" onclick="switchLibraryTab('favorit')">Favorit</button>
+            <button class="sub-tab-btn" id="tabBtnLibBm" onclick="switchLibraryTab('bookmark')">Bookmark Chapter</button>
+        </div>
+
+        <div id="mainFavGrid" class="book-grid"></div>
+        <div id="mainBookmarkListBox" class="page-list-container" style="display: none;"></div>
+    </main>
+
+</div>
+
+<!-- ================================================================= -->
+<!-- BOTTOM NAVIGATION BAR                                             -->
+<!-- ================================================================= -->
+<nav class="bottom-nav">
+    <button class="bottom-nav-item active" id="navBtnHome" onclick="pindahMenuBawah('home')">
+        <div class="nav-icon-wrap">
+            <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1V9.5z"/></svg>
+        </div>
+        <span id="navTxtHome">Home</span>
+    </button>
+
+    <button class="bottom-nav-item" id="navBtnExplore" onclick="pindahMenuBawah('explore')">
+        <div class="nav-icon-wrap">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+        </div>
+        <span id="navTxtExplore">Explore</span>
+    </button>
+
+    <button class="bottom-nav-item" id="navBtnHistory" onclick="pindahMenuBawah('history')">
+        <div class="nav-icon-wrap">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <span id="navTxtHistory">History</span>
+    </button>
+
+    <button class="bottom-nav-item" id="navBtnLibrary" onclick="pindahMenuBawah('library')">
+        <div class="nav-icon-wrap">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+        </div>
+        <span id="navTxtLibrary">Library</span>
+    </button>
+</nav>
+
+<!-- ================================================================= -->
+<!-- MODAL DETAIL KARYA & DAFTAR CHAPTER                               -->
+<!-- ================================================================= -->
+<div id="chapterModal" class="modal-overlay">
+    <div class="modal-card modal-medium">
+        <div class="modal-top-bar">
+            <span class="modal-top-title">Detail Karya</span>
+            <button class="btn-close-x" onclick="tutupModalChapter()">✕</button>
+        </div>
+
+        <div class="chapter-modal-top">
+            <div class="chapter-cover-preview" id="chapModalCover"></div>
+            <div class="chapter-meta-info">
+                <div class="meta-pills-row">
+                    <span class="rank-pill" id="chapModalType">Manhwa</span>
+                    <span class="rank-pill" id="chapModalStatus">Ongoing</span>
+                    <span class="rank-pill" id="chapModalReadCount">Dibaca 0x</span>
+                </div>
+                <h3 id="chapModalTitle">Judul Karya</h3>
+                <p id="chapModalAuthor" class="modal-sub">Penulis • 2026</p>
+                <p id="chapModalGenres" class="genre-tags-line"></p>
+                <div class="chap-action-btns">
+                    <button class="btn-fav-toggle" id="btnToggleFav" onclick="toggleFavoritBukuAktif()">Tambah ke Favorit</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="chapter-list-header">
+            <strong id="txtDaftarIsiLabel">Daftar Chapter</strong>
+            <small id="chapTotalLabel">0 Chapter</small>
+        </div>
+        <div id="chapterListContainer" class="chapter-list-box"></div>
+
+        <div class="modal-actions" style="margin-top: 14px;">
+            <button class="btn-cancel" onclick="tutupModalChapter()">Tutup</button>
+            <button class="btn-save" onclick="lanjutBacaDariModal()">Baca Sekarang</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================= -->
+<!-- LAYAR PEMBACA MODERN (FLOATING TOP BAR & 5 TOMBOL BULAT BAWAH)    -->
+<!-- ================================================================= -->
+<div id="readerScreen" class="reader-overlay">
+
+    <div class="reader-floating-top" id="readerFloatingTop">
+        <button class="floating-top-btn" onclick="kembaliKeDetailDariReader()" title="Kembali">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+
+        <div class="floating-breadcrumb">
+            <span class="bc-title" id="readerTitle">Judul Karya</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-chap" id="readerChapShort">Ch 1</span>
+        </div>
+
+        <button class="floating-top-btn" onclick="tutupReaderKeHome()" title="Ke Home">
+            <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1V9.5z"/></svg>
+        </button>
+    </div>
+
+    <div id="readerBody" class="reader-body" onclick="toggleReaderFloatingUI(event)"></div>
+
+    <div id="readerQuickSettings" class="reader-quick-popover" style="display: none;">
+        <div class="quick-pop-row">
+            <span>Kecepatan Auto Scroll: <b id="labelSpeedScroll">3x</b></span>
+            <input type="range" id="sliderAutoScroll" min="1" max="10" value="3" oninput="ubahKecepatanAutoScroll(this.value)">
+        </div>
+        <div class="quick-pop-actions">
+            <button class="ctrl-btn" id="btnBookmarkReader" onclick="toggleBookmarkSaatBaca()">Tandai Chapter (Bookmark)</button>
+        </div>
+    </div>
+
+    <div class="reader-floating-bottom" id="readerFloatingBottom">
+        <button class="fab-circle-btn" id="btnPrevChap" onclick="navigasiChapter(-1)" title="Chapter Sebelumnya">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+
+        <button class="fab-circle-btn" id="btnReaderGear" onclick="toggleReaderQuickSettings()" title="Pengaturan Scroll & Bookmark">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+
+        <button class="fab-circle-btn fab-play" id="btnPlayAutoScroll" onclick="toggleJalankanAutoScroll()" title="Mulai / Hentikan Auto Scroll">
+            <svg id="iconPlayScroll" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/></svg>
+        </button>
+
+        <button class="fab-circle-btn" id="btnTocReader" onclick="bukaDaftarIsiDariReader()" title="Daftar Chapter">
+            <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+        </button>
+
+        <button class="fab-circle-btn" id="btnNextChap" onclick="navigasiChapter(1)" title="Chapter Selanjutnya">
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+    </div>
+
+</div>
+
+<!-- ================================================================= -->
+<!-- MODAL PROFIL, LOGIN / REGISTER / VERIFIKASI EMAIL, & SETTINGS     -->
+<!-- ================================================================= -->
+<div id="profileModal" class="modal-overlay">
+    <div class="modal-card modal-profile">
+
+        <div class="profile-top-bar">
+            <button class="btn-back-subpage" id="btnBackToProfile" onclick="kembaliKeLevelSebelumnya()" style="visibility: hidden;">
+                ←
+            </button>
+            <span class="profile-top-title" id="profileTopBarTitle">Profil Pengguna</span>
+            <button class="btn-close-x" onclick="tutupModalProfil()" title="Tutup">✕</button>
+        </div>
+
+        <!-- LEVEL 1: PROFIL UTAMA -->
+        <div id="profileHomeView">
+            <div class="profile-clean-card">
+                <div class="profile-avatar-large" id="profAvatarIcon" onclick="bukaModalAkun()" title="Ketuk untuk Login / Ganti Foto Profil">G</div>
+                <h2 class="prof-name-title" id="profDisplayName">Guest</h2>
+                <span class="prof-email-sub" id="profStatusLogin">Mode Tamu (Batas Baca: 0/3 Chapter)</span>
+
+                <div class="prof-rank-box">
+                    <span class="rank-badge-main" id="profRankTitle">Rakyat Biasa</span>
+                    <small id="profJoinDays">Hari ke-1 di PERLINE</small>
+                </div>
+
+                <div class="exp-bar-wrap">
+                    <div class="exp-bar-fill" id="profExpBar" style="width: 5%;"></div>
+                </div>
+                <small class="exp-text" id="profExpText">0 / 250 EXP menuju gelar Knight</small>
+
+                <div class="prof-main-actions">
+                    <button class="btn-outline-action" id="btnOpenAccountModal" onclick="bukaModalAkun()">Login / Daftar</button>
+                    <button class="btn-primary-action" onclick="bukaMenuSettingsUtama()">Settings</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEVEL 2: DAFTAR MENU SETTINGS -->
+        <div id="settingsMenuView" style="display: none;">
+            <div class="m3-settings-list">
+
+                <button class="m3-item" onclick="bukaLamanDetailSetting('sampaikan', 'Ada yang Ingin Disampaikan')">
+                    <div class="m3-icon">
+                        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <div class="m3-text">
+                        <strong>Ada yang Ingin Disampaikan</strong>
+                        <span>Kritik dan saran untuk developer serta request novel</span>
+                    </div>
+                </button>
+
+                <button class="m3-item" onclick="bukaLamanDetailSetting('tema', 'Tema & Tampilan')">
+                    <div class="m3-icon">
+                        <svg viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                    </div>
+                    <div class="m3-text">
+                        <strong>Tema & Tampilan</strong>
+                        <span>Pilihan 3 tema warna, kecepatan auto scroll, dan bahasa</span>
+                    </div>
+                </button>
+
+                <button class="m3-item" onclick="bukaLamanDetailSetting('statistik', 'Statistik Membaca')">
+                    <div class="m3-icon">
+                        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    </div>
+                    <div class="m3-text">
+                        <strong>Statistik</strong>
+                        <span>Total durasi baca, buku ditamatkan, dan chapter dibaca</span>
+                    </div>
+                </button>
+
+            </div>
+        </div>
+
+        <!-- LEVEL 3: LAMAN DETAIL TIAP MENU SETTINGS -->
+        <div id="settingsDetailView" style="display: none;">
+
+            <!-- 1. ADA YANG INGIN DISAMPAIKAN -->
+            <div id="paneSampaikan" class="setting-pane">
+                <div class="sub-switch-tabs">
+                    <button class="sub-tab-btn active" id="tabBtnKritik" onclick="switchSampaikanTab('kritik')">Kritik dan Saran</button>
+                    <button class="sub-tab-btn" id="tabBtnRequest" onclick="switchSampaikanTab('request')">Request Novel / Komik</button>
+                </div>
+
+                <div id="boxFormKritik">
+                    <p class="pane-desc">Sampaikan masukan, kritik, atau saran pengembangan untuk tim developer PERLINE:</p>
+                    <textarea id="inFeedbackText" class="form-textarea" rows="5" placeholder="Tulis kritik atau saran Anda di sini..."></textarea>
+                    <button class="btn-save" id="btnSubmitFeedback" style="width:100%;" onclick="kirimKritikSaran()">Kirim Kritik & Saran</button>
+                </div>
+
+                <div id="boxFormRequest" style="display:none;">
+                    <p class="pane-desc">Ajukan judul novel, manga, atau manhwa yang ingin Anda baca di PERLINE:</p>
+                    <label class="form-label">Judul Karya</label>
+                    <input type="text" id="inReqJudul" class="form-input" placeholder="Masukkan judul novel atau komik...">
+                    <label class="form-label">Jenis / Genre / Catatan</label>
+                    <input type="text" id="inReqCatatan" class="form-input" placeholder="Contoh: Manhwa Action / Light Novel Fantasy">
+                    <button class="btn-save" id="btnSubmitRequest" style="width:100%;" onclick="kirimRequestNovel()">Kirim Request</button>
+                </div>
+            </div>
+
+            <!-- 2. TEMA & TAMPILAN -->
+            <div id="paneTema" class="setting-pane">
+                <div class="setting-block">
+                    <strong>Pilih Tema Aplikasi (3 Tema)</strong>
+                    <p class="setting-desc">Sesuaikan nuansa warna latar perpustakaan.</p>
+                    <div class="theme-selector-grid">
+                        <button class="theme-card-btn" id="btnThemeDark" onclick="ubahTemaAplikasi('dark')">
+                            <span class="theme-dot" style="background:#121316; border:2px solid #8B5CF6;"></span>
+                            <span>Gelap (Obsidian)</span>
+                        </button>
+                        <button class="theme-card-btn" id="btnThemeLight" onclick="ubahTemaAplikasi('light')">
+                            <span class="theme-dot" style="background:#F7F4EF; border:2px solid #4A6B5D;"></span>
+                            <span>Terang (Warm)</span>
+                        </button>
+                        <button class="theme-card-btn" id="btnThemeViolet" onclick="ubahTemaAplikasi('violet')">
+                            <span class="theme-dot" style="background:#1A162B; border:2px solid #C084FC;"></span>
+                            <span>Midnight Violet</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div>
+                        <strong>Kecepatan Auto Scroll Default</strong>
+                        <p class="setting-desc">Atur kecepatan gulir otomatis saat membaca.</p>
+                    </div>
+                    <select id="selectSpeedScrollSetting" class="setting-select" onchange="ubahKecepatanAutoScroll(this.value)">
+                        <option value="1">1x (Sangat Lambat)</option>
+                        <option value="3" selected>3x (Normal)</option>
+                        <option value="5">5x (Sedang)</option>
+                        <option value="8">8x (Cepat)</option>
+                        <option value="10">10x (Sangat Cepat)</option>
+                    </select>
+                </div>
+
+                <div class="setting-item">
+                    <div>
+                        <strong>Mode Tampilan Layar</strong>
+                        <p class="setting-desc">Sesuaikan tata letak untuk Handphone atau Desktop.</p>
+                    </div>
+                    <select id="selectLayoutMode" class="setting-select" onchange="ubahModeLayar(this.value)">
+                        <option value="auto">Otomatis (Responsif)</option>
+                        <option value="mobile">Mode Handphone</option>
+                        <option value="desktop">Mode Desktop</option>
+                    </select>
+                </div>
+
+                <div class="setting-item" style="border-bottom:none;">
+                    <div>
+                        <strong>Bahasa Antarmuka</strong>
+                        <p class="setting-desc">Pilih bahasa tampilan aplikasi.</p>
+                    </div>
+                    <select id="selectBahasa" class="setting-select" onchange="ubahBahasa(this.value)">
+                        <option value="id">Indonesia</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 3. STATISTIK -->
+            <div id="paneStatistik" class="setting-pane">
+                <p class="pane-desc">Ringkasan aktivitas membaca Anda di PERLINE:</p>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <span class="stat-num" id="statTotalBuku">0</span>
+                        <small id="lblStatBuku">Buku di Library</small>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-num" id="statDurasiBaca">0m</span>
+                        <small id="lblStatDurasi">Total Durasi Baca</small>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-num" id="statBukuTamat">0</span>
+                        <small id="lblStatTamat">Buku Ditamatkan</small>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-num" id="statTotalChapter">0</span>
+                        <small id="lblStatChapter">Chapter Dibaca</small>
+                    </div>
+                </div>
+
+                <div class="rank-progression-box">
+                    <strong>Urutan Gelar Bangsawan PERLINE</strong>
+                    <p class="setting-desc" style="margin-top:6px; line-height:1.6;">
+                        Rakyat Biasa (0 EXP) ➔ Knight (250 EXP) ➔ Baron (750 EXP) ➔ Viscount (1.600 EXP) ➔ Count (3.000 EXP) ➔ Duke (5.000 EXP) ➔ Expert Knight (8.000 EXP) ➔ Archduke (12.000 EXP) ➔ King (18.000 EXP) ➔ Emperor (26.000 EXP)
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- LEVEL 4: SISTEM AUTENTIKASI (LOGIN, DAFTAR AKUN, VERIFIKASI EMAIL OTP, & EDIT PROFIL) -->
+        <div id="accountEditView" style="display: none;">
+
+            <!-- A. TAMPIL JIKA BELUM LOGIN -->
+            <div id="boxRequireAuth">
+                <div id="guestQuotaBanner" class="auth-notice-banner">
+                    Mode Tamu: Anda telah membaca <b id="txtGuestQuotaUsed">0</b> dari maksimal <b>3 chapter</b> gratis. Masuk atau daftar akun untuk membaca tanpa batas.
+                </div>
+
+                <div class="sub-switch-tabs">
+                    <button class="sub-tab-btn active" id="tabBtnModeLogin" onclick="switchAuthTab('login')">Masuk (Login)</button>
+                    <button class="sub-tab-btn" id="tabBtnModeRegister" onclick="switchAuthTab('register')">Daftar Akun Baru</button>
+                </div>
+
+                <div id="authErrorMsg" class="auth-error-box" style="display: none;"></div>
+
+                <!-- FORM 1: LOGIN (HANYA BISA UNTUK AKUN YANG SUDAH TERDAFTAR & TERVERIFIKASI) -->
+                <div id="formPanelLogin">
+                    <label class="form-label">Email Akun Terdaftar</label>
+                    <input type="email" id="inLoginEmail" class="form-input" placeholder="Masukkan email yang sudah terdaftar...">
+
+                    <label class="form-label">Kata Sandi</label>
+                    <input type="password" id="inLoginPass" class="form-input" placeholder="Masukkan kata sandi Anda...">
+
+                    <div class="modal-actions" style="margin-top:14px;">
+                        <button class="btn-cancel" onclick="kembaliKeLevelSebelumnya()">Batal</button>
+                        <button class="btn-save" onclick="prosesLoginValid()">Masuk ke Akun</button>
+                    </div>
+                </div>
+
+                <!-- FORM 2: DAFTAR AKUN BARU (REGISTER) -->
+                <div id="formPanelRegister" style="display: none;">
+                    <label class="form-label">Username Pilihan</label>
+                    <input type="text" id="inRegName" class="form-input" placeholder="Contoh: chhooooky (Min. 3 karakter)">
+
+                    <label class="form-label">Alamat Email Aktif</label>
+                    <input type="email" id="inRegEmail" class="form-input" placeholder="nama@email.com">
+
+                    <label class="form-label">Buat Kata Sandi</label>
+                    <input type="password" id="inRegPass" class="form-input" placeholder="Minimal 6 karakter...">
+
+                    <div class="modal-actions" style="margin-top:14px;">
+                        <button class="btn-cancel" onclick="kembaliKeLevelSebelumnya()">Batal</button>
+                        <button class="btn-save" id="btnSubmitRegister" onclick="prosesDaftarAkunBaru()">Kirim Kode Verifikasi</button>
+                    </div>
+                </div>
+
+                <!-- FORM 3: VERIFIKASI KODE OTP EMAIL -->
+                <div id="formPanelVerify" style="display: none;">
+                    <div class="verify-info-card">
+                        <strong>Verifikasi Alamat Email</strong>
+                        <p id="txtVerifyTargetEmail" class="setting-desc" style="margin-top:4px;">Kode verifikasi 6 digit telah dikirimkan ke email Anda.</p>
+                        <div id="simulatedInboxBox" class="simulated-otp-box"></div>
+                    </div>
+
+                    <label class="form-label">Masukkan Kode Verifikasi (6 Digit)</label>
+                    <input type="text" id="inVerifyOtpCode" class="form-input otp-input-field" maxlength="6" placeholder="000000">
+
+                    <div class="modal-actions" style="margin-top:14px;">
+                        <button class="btn-cancel" onclick="switchAuthTab('register')">Ubah Email</button>
+                        <button class="btn-save" onclick="prosesVerifikasiKodeOtp()">Verifikasi & Aktifkan Akun</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- B. TAMPIL JIKA SUDAH LOGIN (BISA GANTI FOTO PROFIL & NAMA) -->
+            <div id="boxEditProfileLogged" style="display: none;">
+                <p class="pane-desc">Akun Anda telah terverifikasi. Anda bebas membaca seluruh chapter dan mengganti foto profil:</p>
+
+                <div class="avatar-upload-preview-wrap">
+                    <div class="profile-avatar-large" id="previewAvatarEdit" style="margin-bottom:8px;">C</div>
+                    <small id="loggedEmailInfo" style="color:var(--accent-main); font-weight:600;"></small>
+                </div>
+
+                <label class="form-label">Ubah Nama Pengguna (Username)</label>
+                <input type="text" id="inEditName" class="form-input" placeholder="Nama pengguna baru...">
+
+                <label class="form-label">Pilih Foto Profil Baru</label>
+                <input type="file" id="inAccAvatarFile" accept="image/*" class="form-input-file" onchange="pratinjauFotoProfil(this)">
+
+                <div class="modal-actions" style="margin-top:14px;">
+                    <button class="btn-cancel" onclick="kembaliKeLevelSebelumnya()">Batal</button>
+                    <button class="btn-save" onclick="simpanPerubahanProfil()">Simpan Profil</button>
+                </div>
+
+                <button class="btn-logout" onclick="logoutAkunPengguna()">Keluar dari Akun (Logout ke Mode Guest)</button>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
